@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateX="14"
+        android:translateY="27">
+
+        <!-- Left Big Curved Leaf -->
+        <path
+            android:fillColor="#2E7D63"
+            android:pathData="M 48,58 C 12,50 5,20 30,12 C 48,15 52,38 48,58 Z" />
+
+        <!-- Right Big Curved Leaf -->
+        <path
+            android:fillColor="#256B52"
+            android:pathData="M 52,58 C 88,50 95,20 70,12 C 52,15 48,38 52,58 Z" />
+
+        <!-- Top Vertical Center Leaf -->
+        <path
+            android:fillColor="#388E73"
+            android:pathData="M 50,45 C 38,28 40,5 50,0 C 60,5 62,28 50,45 Z" />
+
+        <!-- Small Bottom Left Leaf Accent -->
+        <path
+            android:fillColor="#43A082"
+            android:pathData="M 45,68 C 22,65 20,52 32,45 C 42,48 46,60 45,68 Z" />
+
+        <!-- Small Bottom Right Leaf Accent -->
+        <path
+            android:fillColor="#388E73"
+            android:pathData="M 55,68 C 78,65 80,52 68,45 C 58,48 54,60 55,68 Z" />
+
+    </group>
+
+</vector>
