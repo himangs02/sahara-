@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import com.yourteam.sahara.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,7 @@ import java.util.Locale
 class SpeechRecognizerManager(
     private val context: Context,
     private val onSpeechResult: (String) -> Unit,
-    private val onError: (String) -> Unit
+    private val onError: (Int) -> Unit
 ) : RecognitionListener {
 
     private var speechRecognizer: SpeechRecognizer? = null
@@ -30,7 +31,7 @@ class SpeechRecognizerManager(
 
     fun startListening(languageCode: String = "en") {
         if (speechRecognizer == null) {
-            onError("Voice recognition is not available on this device.")
+            onError(R.string.voice_not_available)
             return
         }
 
@@ -50,14 +51,14 @@ class SpeechRecognizerManager(
             speechRecognizer?.startListening(intent)
         } catch (e: Exception) {
             _isListening.value = false
-            onError("Unable to start listening.")
+            onError(R.string.voice_error)
         }
     }
 
     fun stopListening() {
         _isListening.value = false
         try {
-            speechRecognizer?.stopListening()
+            speechRecognizer?.cancel()
         } catch (_: Exception) {}
     }
 
@@ -74,28 +75,30 @@ class SpeechRecognizerManager(
     override fun onRmsChanged(rmsdB: Float) {}
     override fun onBufferReceived(buffer: ByteArray?) {}
     override fun onEndOfSpeech() {
-        _isListening.value = false
+        // Recognition is still active until onResults/onError, even after audio ends.
     }
 
     override fun onError(error: Int) {
+        if (!_isListening.value) return
         _isListening.value = false
         val message = when (error) {
-            SpeechRecognizer.ERROR_NO_MATCH -> "No speech heard."
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech heard in time."
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Audio permission required."
-            else -> "Sorry, I didn't understand."
+            SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> R.string.no_speech
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> R.string.microphone_permission
+            SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED, SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> R.string.voice_not_available
+            else -> R.string.voice_error
         }
         onError(message)
     }
 
     override fun onResults(results: Bundle?) {
+        if (!_isListening.value) return
         _isListening.value = false
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val spokenText = matches?.firstOrNull()
         if (!spokenText.isNullOrBlank()) {
             onSpeechResult(spokenText)
         } else {
-            onError("No speech recognized.")
+            onError(R.string.no_speech)
         }
     }
 

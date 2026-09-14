@@ -14,13 +14,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.yourteam.sahara.R
 import com.yourteam.sahara.sync.SyncState
 import com.yourteam.sahara.sync.SyncStatusInfo
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
+
 
 @Composable
 fun SyncStatusCard(
@@ -29,6 +32,8 @@ fun SyncStatusCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val offlineMessage = stringResource(R.string.sync_offline_toast)
+    val syncStartedMessage = stringResource(R.string.sync_started)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -75,12 +80,17 @@ fun SyncStatusCard(
 
                 Column {
                     Text(
-                        text = syncStatusInfo.statusMessage,
+                        text = syncStatusText(syncStatusInfo),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = formatLastSyncTime(syncStatusInfo.lastSuccessfulSyncTime),
+                        text = if (syncStatusInfo.lastSuccessfulSyncTime == 0L) {
+                            stringResource(R.string.sync_never)
+                        } else {
+                            val format = SimpleDateFormat("MMM d, h:mm a", currentLocale())
+                            stringResource(R.string.sync_last, format.format(Date(syncStatusInfo.lastSuccessfulSyncTime)))
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -92,24 +102,32 @@ fun SyncStatusCard(
                     if (syncStatusInfo.state == SyncState.OFFLINE) {
                         Toast.makeText(
                             context,
-                            "You're offline. Your data is safely saved and will sync automatically when connection returns.",
+                            offlineMessage,
                             Toast.LENGTH_LONG
                         ).show()
                     } else {
                         onSyncNowClick(context)
-                        Toast.makeText(context, "Synchronization initiated...", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, syncStartedMessage, Toast.LENGTH_SHORT).show()
                     }
                 },
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("SYNC NOW", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.sync_now), style = MaterialTheme.typography.labelSmall)
             }
         }
     }
 }
 
-private fun formatLastSyncTime(timestamp: Long): String {
-    if (timestamp == 0L) return "Not synced yet"
-    val sdf = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
-    return "Last synced: ${sdf.format(Date(timestamp))}"
+@Composable
+private fun syncStatusText(info: SyncStatusInfo): String {
+    val resources = LocalResources.current
+    return when (info.state) {
+        SyncState.SYNCED -> stringResource(R.string.sync_synced)
+        SyncState.PENDING -> resources.getQuantityString(R.plurals.sync_pending, info.pendingCount, info.pendingCount)
+        SyncState.SYNCING -> stringResource(R.string.sync_syncing)
+        SyncState.OFFLINE -> if (info.pendingCount > 0) {
+            resources.getQuantityString(R.plurals.sync_saved_locally, info.pendingCount, info.pendingCount)
+        } else stringResource(R.string.sync_offline)
+        SyncState.FAILED -> stringResource(R.string.sync_failed)
+    }
 }

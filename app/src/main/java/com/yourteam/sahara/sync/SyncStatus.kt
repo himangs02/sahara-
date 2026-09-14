@@ -11,6 +11,5 @@ enum class SyncState {
 data class SyncStatusInfo(
     val state: SyncState,
     val pendingCount: Int = 0,
-    val lastSuccessfulSyncTime: Long = 0L,
-    val statusMessage: String = ""
+    val lastSuccessfulSyncTime: Long = 0L
 )

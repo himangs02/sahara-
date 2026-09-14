@@ -1,6 +1,8 @@
 package com.yourteam.sahara.caregiver
 
+import com.yourteam.sahara.R
 import com.yourteam.sahara.ai.CaregiverInsightEngine
+import com.yourteam.sahara.model.AlertKind
 import com.yourteam.sahara.model.CognitiveActivityType
 import com.yourteam.sahara.model.Difficulty
 import com.yourteam.sahara.model.GameResult
@@ -110,7 +112,8 @@ class CaregiverInsightEngineTest {
         val alert = alerts.find { it.activityType == CognitiveActivityType.SEQUENCE_RECALL }
 
         assertNotNull(alert)
-        assertTrue(alert?.title?.contains("Attention Needed") == true)
+        assertEquals(AlertKind.LOW_PERFORMANCE, alert?.kind)
+        assertEquals(R.string.alert_low_title, alert?.title?.id)
     }
 
     @Test
@@ -128,6 +131,6 @@ class CaregiverInsightEngineTest {
 
         assertEquals(60f, breakdown.recentAccuracy, 0.1f)
         assertEquals(90f, breakdown.previousAccuracy, 0.1f)
-        assertTrue(breakdown.interpretation.contains("lower accuracy"))
+        assertEquals(R.string.interpretation_lower, breakdown.interpretation.id)
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yourteam.sahara.model.AttentionSymbolItem
 
@@ -21,7 +22,9 @@ import com.yourteam.sahara.model.AttentionSymbolItem
 fun AttentionTarget(
     item: AttentionSymbolItem,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** The familiar name for this picture (generic, or from a cultural content pack). */
+    @androidx.annotation.StringRes labelRes: Int? = null
 ) {
     Card(
         modifier = modifier
@@ -39,7 +42,7 @@ fun AttentionTarget(
         ) {
             Icon(
                 imageVector = item.icon.imageVector,
-                contentDescription = item.icon.name,
+                contentDescription = labelRes?.let { stringResource(it) },
                 modifier = Modifier.size(56.dp),
                 tint = MaterialTheme.colorScheme.primary
             )

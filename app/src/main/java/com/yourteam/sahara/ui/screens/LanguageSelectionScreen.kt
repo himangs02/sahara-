@@ -1,5 +1,8 @@
 package com.yourteam.sahara.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +23,7 @@ fun LanguageSelectionScreen(
     onLanguageSelected: (AppLanguage) -> Unit,
     onContinueClick: () -> Unit
 ) {
-    var selectedLanguage by remember { mutableStateOf(currentLanguage) }
+    val selectedLanguage = currentLanguage
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -42,7 +45,7 @@ fun LanguageSelectionScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Choose Your Language",
+                    text = stringResource(R.string.choose_language),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -70,7 +73,6 @@ fun LanguageSelectionScreen(
                         flagEmoji = "🇬🇧",
                         isSelected = selectedLanguage == AppLanguage.ENGLISH,
                         onClick = {
-                            selectedLanguage = AppLanguage.ENGLISH
                             onLanguageSelected(AppLanguage.ENGLISH)
                         }
                     )
@@ -80,7 +82,6 @@ fun LanguageSelectionScreen(
                         flagEmoji = "🇮🇳",
                         isSelected = selectedLanguage == AppLanguage.HINDI,
                         onClick = {
-                            selectedLanguage = AppLanguage.HINDI
                             onLanguageSelected(AppLanguage.HINDI)
                         }
                     )
@@ -90,7 +91,6 @@ fun LanguageSelectionScreen(
                         flagEmoji = "🌺",
                         isSelected = selectedLanguage == AppLanguage.ASSAMESE,
                         onClick = {
-                            selectedLanguage = AppLanguage.ASSAMESE
                             onLanguageSelected(AppLanguage.ASSAMESE)
                         }
                     )
@@ -110,7 +110,7 @@ fun LanguageSelectionScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
                 Text(
-                    text = "Continue",
+                    text = stringResource(R.string.continue_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp

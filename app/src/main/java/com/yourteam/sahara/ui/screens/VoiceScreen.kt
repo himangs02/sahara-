@@ -1,5 +1,8 @@
 package com.yourteam.sahara.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,10 +30,12 @@ import com.yourteam.sahara.voice.VoiceState
 @Composable
 fun VoiceScreen(
     voiceManager: VoiceManager?,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onVoiceClick: (() -> Unit)? = null
 ) {
+    val idleText = stringResource(R.string.tap_to_speak)
     val voiceState by voiceManager?.voiceState?.collectAsState() ?: remember { mutableStateOf(VoiceState.IDLE) }
-    val statusMessage by voiceManager?.statusMessage?.collectAsState() ?: remember { mutableStateOf("Sahara is listening...") }
+    val statusMessage by voiceManager?.statusMessage?.collectAsState() ?: remember(idleText) { mutableStateOf(idleText) }
 
     // Pulsating animation for mic ripple effect
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -49,14 +54,14 @@ fun VoiceScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (voiceState == VoiceState.LISTENING) "Sahara is listening..." else "Voice Interaction",
+                        text = if (voiceState == VoiceState.LISTENING) stringResource(R.string.listening) else stringResource(R.string.voice_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -107,7 +112,9 @@ fun VoiceScreen(
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable {
-                                if (voiceState == VoiceState.LISTENING) {
+                                if (onVoiceClick != null) {
+                                    onVoiceClick()
+                                } else if (voiceState == VoiceState.LISTENING) {
                                     voiceManager?.stopListening()
                                 } else {
                                     voiceManager?.startListening()
@@ -117,7 +124,7 @@ fun VoiceScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Mic,
-                            contentDescription = "Microphone",
+                            contentDescription = stringResource(R.string.tap_to_speak),
                             tint = Color.White,
                             modifier = Modifier.size(48.dp)
                         )
@@ -127,7 +134,7 @@ fun VoiceScreen(
                 Spacer(modifier = Modifier.height(36.dp))
 
                 Text(
-                    text = "Speak naturally",
+                    text = stringResource(R.string.speak_naturally),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -145,7 +152,7 @@ fun VoiceScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "for example:\n\"Start memory game\"",
+                    text = stringResource(R.string.voice_example),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium,
@@ -162,7 +169,7 @@ fun VoiceScreen(
                 shape = RoundedCornerShape(26.dp)
             ) {
                 Text(
-                    text = "Cancel",
+                    text = stringResource(R.string.cancel),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

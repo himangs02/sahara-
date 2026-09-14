@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yourteam.sahara.model.CaregiverAlert
@@ -34,7 +36,7 @@ fun SaharaAlertCard(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = alert.title,
+                    text = alert.title.asString(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onErrorContainer
@@ -44,7 +46,7 @@ fun SaharaAlertCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = alert.message,
+                text = alert.message.asString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
@@ -56,7 +58,7 @@ fun SaharaAlertCard(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(onClick = onViewHistoryClick) {
-                    Text("View activity history", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.view_activity_history), style = MaterialTheme.typography.labelSmall)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
@@ -64,7 +66,7 @@ fun SaharaAlertCard(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Mark as reviewed", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.mark_reviewed), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

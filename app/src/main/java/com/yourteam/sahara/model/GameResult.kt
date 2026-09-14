@@ -3,6 +3,7 @@ package com.yourteam.sahara.model
 import java.util.UUID
 
 data class GameResult(
+    val patientId: String = com.yourteam.sahara.auth.DemoIdentity.PATIENT_ID,
     val syncId: String = UUID.randomUUID().toString(),
     val gameType: String = "Memory Match",
     val difficulty: String,

@@ -1,5 +1,6 @@
 package com.yourteam.sahara.data.repository
 
+import com.yourteam.sahara.auth.DemoIdentity
 import com.yourteam.sahara.data.local.CaregiverAlertDao
 import com.yourteam.sahara.data.local.toDomain
 import com.yourteam.sahara.data.local.toEntity
@@ -11,15 +12,16 @@ import kotlinx.coroutines.withContext
 
 class CaregiverAlertRepository(private val dao: CaregiverAlertDao) {
 
-    suspend fun insertAlert(alert: CaregiverAlert) = withContext(Dispatchers.IO) {
-        dao.insertAlert(alert.toEntity())
+    /** [patientId] scopes the stored alert; callers must pass the patient it was generated for. */
+    suspend fun insertAlert(alert: CaregiverAlert, patientId: String = DemoIdentity.PATIENT_ID) = withContext(Dispatchers.IO) {
+        dao.insertAlert(alert.toEntity(patientId))
     }
 
     suspend fun markAlertReviewed(alertId: String) = withContext(Dispatchers.IO) {
         dao.markAlertReviewed(alertId)
     }
 
-    fun getAlertsForPatient(patientId: String = "patient_001"): Flow<List<CaregiverAlert>> {
+    fun getAlertsForPatient(patientId: String = DemoIdentity.PATIENT_ID): Flow<List<CaregiverAlert>> {
         return dao.getAlertsForPatient(patientId).map { entities ->
             entities.map { it.toDomain() }
         }

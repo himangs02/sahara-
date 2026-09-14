@@ -1,11 +1,14 @@
 package com.yourteam.sahara.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yourteam.sahara.model.CardIcon
 import com.yourteam.sahara.model.Difficulty
 import com.yourteam.sahara.model.GameResult
 import com.yourteam.sahara.model.MemoryCardModel
+import com.yourteam.sahara.personalization.GameContentProvider
+import com.yourteam.sahara.personalization.NerRegions
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,15 +30,27 @@ data class MemoryGameState(
 
 class MemoryGameViewModel(
     private val repository: com.yourteam.sahara.data.repository.GameResultRepository,
-    private val initialDifficulty: Difficulty = Difficulty.EASY
+    private val initialDifficulty: Difficulty = Difficulty.EASY,
+    /** The patient's free-text region (e.g. "Assam"); null means only generic content. */
+    private val patientRegion: String? = null,
+    /** Caregiver-controlled preference (Stage 3D, Part 6); see PersonalizationPreferences. */
+    private val culturalContentEnabled: Boolean = true
 ) : ViewModel() {
     private val _state = MutableStateFlow(MemoryGameState())
     val state: StateFlow<MemoryGameState> = _state.asStateFlow()
+
+    private val regionProfile = NerRegions.match(patientRegion)
 
     private var timerJob: Job? = null
     // Cache the most recent result for UI display
     var lastGameResult: GameResult? = null
         private set
+
+    /** The familiar name to show for [icon]'s picture -- generic unless a cultural pack for
+     * this patient's region is available and enabled (Stage 3D, Part 7). Never returns nothing:
+     * every [CardIcon] always has at least a generic name. */
+    @StringRes
+    fun labelFor(icon: CardIcon): Int = GameContentProvider.labelFor(icon, regionProfile, culturalContentEnabled)
 
     init {
         startGame(initialDifficulty)
@@ -133,6 +148,7 @@ class MemoryGameViewModel(
 
     private fun saveGameResult(pairs: Int, mistakes: Int, acc: Int) {
         val result = GameResult(
+            patientId = repository.patientId,
             difficulty = _state.value.difficulty.name,
             totalPairs = _state.value.difficulty.pairs,
             matchedPairs = pairs,

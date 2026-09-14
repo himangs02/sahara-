@@ -4,20 +4,16 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.yourteam.sahara.ai.ActivityChangeBreakdown
-import com.yourteam.sahara.ai.AdaptiveDifficultyEngine
-import com.yourteam.sahara.ai.AdaptiveRecommendation
-import com.yourteam.sahara.ai.CaregiverInsightEngine
+import com.yourteam.sahara.ai.CaregiverDashboardAnalyzer
+import com.yourteam.sahara.ai.DashboardSummary
 import com.yourteam.sahara.data.repository.GameResultRepository
 import com.yourteam.sahara.data.repository.PatientRepository
 import com.yourteam.sahara.data.repository.ReminderRepository
-import com.yourteam.sahara.data.repository.CaregiverAlertRepository
-import com.yourteam.sahara.model.CaregiverAlert
-import com.yourteam.sahara.model.CaregiverInsight
 import com.yourteam.sahara.model.CognitiveActivityType
 import com.yourteam.sahara.model.GameResult
 import com.yourteam.sahara.model.Patient
 import com.yourteam.sahara.model.Reminder
+import com.yourteam.sahara.model.TodayReminder
 import com.yourteam.sahara.sync.SyncManager
 import com.yourteam.sahara.sync.SyncState
 import com.yourteam.sahara.sync.SyncStatusInfo
@@ -33,15 +29,12 @@ import java.util.Locale
 data class CaregiverUiState(
     val patient: Patient = Patient(),
     val overallEngagement: Int = 0,
-    val memoryPerformance: Int = 0,
-    val attentionPerformance: Int = 0,
-    val sequencePerformance: Int = 0,
+    /** Newest first, including sessions that were not finished. */
     val recentActivities: List<GameResult> = emptyList(),
-    val trends7Day: Map<CognitiveActivityType, List<Pair<String, Float>>> = emptyMap(),
-    val insights: List<CaregiverInsight> = emptyList(),
-    val alerts: List<CaregiverAlert> = emptyList(),
-    val reminders: List<Reminder> = emptyList(),
-    val recommendationsMap: Map<CognitiveActivityType, AdaptiveRecommendation> = emptyMap(),
+    /** Day start timestamps with average accuracy; the UI formats the day in its own language. */
+    val trends7Day: Map<CognitiveActivityType, List<Pair<Long, Float>>> = emptyMap(),
+    /** Null until the first data load completes. */
+    val dashboard: DashboardSummary? = null,
     val syncStatus: SyncStatusInfo = SyncStatusInfo(SyncState.SYNCED),
     val isLoading: Boolean = false
 )
@@ -51,18 +44,18 @@ class CaregiverViewModel(
     private val patientRepository: PatientRepository,
     private val reminderRepository: ReminderRepository,
     private val syncManager: SyncManager? = null,
-    private val patientId: String = "patient_001"
+    private val patientId: String = gameResultRepository.patientId
 ) : ViewModel() {
 
-    private val adaptiveEngine = AdaptiveDifficultyEngine()
-    private val insightEngine = CaregiverInsightEngine()
+    private val dashboardAnalyzer = CaregiverDashboardAnalyzer()
 
     val state: StateFlow<CaregiverUiState> = combine(
         patientRepository.getPatientById(patientId),
         gameResultRepository.getAllGameResults(),
-        reminderRepository.getRemindersForPatient(patientId),
-        syncManager?.syncStatusInfo ?: kotlinx.coroutines.flow.flowOf(SyncStatusInfo(SyncState.SYNCED))
-    ) { patient, allResults, remindersList, syncInfo ->
+        syncManager?.syncStatusInfo ?: kotlinx.coroutines.flow.flowOf(SyncStatusInfo(SyncState.SYNCED)),
+        // Re-evaluated each minute so "today" and activity status roll over without new data.
+        minuteClock()
+    ) { patient, allResults, syncInfo, clock ->
         val currentPatient = patient ?: Patient()
         val completed = allResults.filter { it.completed }.sortedByDescending { it.timestamp }
 
@@ -87,26 +80,14 @@ class CaregiverViewModel(
         val activePerformances = listOf(memoryPerf, attentionPerf, sequencePerf).filter { it > 0 }
         val overall = if (activePerformances.isNotEmpty()) activePerformances.average().toInt() else 0
 
-        val recsMap = CognitiveActivityType.entries.associateWith { activityType ->
-            adaptiveEngine.analyzeAndRecommend(completed, activityType)
-        }
-
-        val insights = insightEngine.generateInsights(completed)
-        val alerts = insightEngine.generateAlerts(completed)
         val trends = calculate7DayTrends(completed)
 
         CaregiverUiState(
             patient = currentPatient,
             overallEngagement = overall,
-            memoryPerformance = memoryPerf,
-            attentionPerformance = attentionPerf,
-            sequencePerformance = sequencePerf,
-            recentActivities = completed.take(10),
+            recentActivities = allResults.sortedByDescending { it.timestamp }.take(HISTORY_LIMIT),
             trends7Day = trends,
-            insights = insights,
-            alerts = alerts,
-            reminders = remindersList,
-            recommendationsMap = recsMap,
+            dashboard = dashboardAnalyzer.summarize(allResults, clock),
             syncStatus = syncInfo,
             isLoading = false
         )
@@ -116,16 +97,32 @@ class CaregiverViewModel(
         initialValue = CaregiverUiState(isLoading = true)
     )
 
-    fun getWhyChangeBreakdown(
-        allResults: List<GameResult>,
-        activityType: CognitiveActivityType
-    ): ActivityChangeBreakdown {
-        return insightEngine.getWhyChangeBreakdown(allResults, activityType)
+    val todayReminders: StateFlow<List<TodayReminder>> = reminderRepository
+        .todayReminders(patientId, includeDisabled = true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Adds a new reminder or replaces an edited one (same id). */
+    fun saveReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            reminderRepository.insertReminder(reminder.copy(patientId = patientId))
+        }
     }
 
-    fun updateReminder(reminder: Reminder) {
+    fun deleteReminder(reminder: Reminder) {
         viewModelScope.launch {
-            reminderRepository.updateReminder(reminder)
+            reminderRepository.deleteReminder(reminder)
+        }
+    }
+
+    fun setReminderDone(reminder: Reminder, done: Boolean) {
+        viewModelScope.launch {
+            reminderRepository.setCompleted(reminder.id, done)
+        }
+    }
+
+    fun setReminderEnabled(reminder: Reminder, enabled: Boolean) {
+        viewModelScope.launch {
+            reminderRepository.setEnabled(reminder.id, enabled)
         }
     }
 
@@ -133,13 +130,17 @@ class CaregiverViewModel(
         syncManager?.triggerManualSync(context)
     }
 
+    private companion object {
+        const val HISTORY_LIMIT = 50
+    }
+
     private fun calculateAverageAccuracy(results: List<GameResult>): Int {
         if (results.isEmpty()) return 0
         return results.take(5).map { it.accuracy }.average().toInt()
     }
 
-    private fun calculate7DayTrends(results: List<GameResult>): Map<CognitiveActivityType, List<Pair<String, Float>>> {
-        val dateFormat = SimpleDateFormat("EEE", Locale.getDefault())
+    private fun calculate7DayTrends(results: List<GameResult>): Map<CognitiveActivityType, List<Pair<Long, Float>>> {
+        val dateFormat = SimpleDateFormat("EEE", Locale.ROOT)
         val dayMillis = 24 * 60 * 60 * 1000L
         val now = System.currentTimeMillis()
 
@@ -164,7 +165,7 @@ class CaregiverViewModel(
                     if (activityResults.isNotEmpty()) activityResults.map { it.accuracy }.average().toFloat() else 0f
                 }
 
-                Pair(dayLabel, avgAcc)
+                Pair(dayTime, avgAcc)
             }
         }
     }
@@ -175,7 +176,7 @@ class CaregiverViewModelFactory(
     private val patientRepository: PatientRepository,
     private val reminderRepository: ReminderRepository,
     private val syncManager: SyncManager? = null,
-    private val patientId: String = "patient_001"
+    private val patientId: String = gameResultRepository.patientId
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CaregiverViewModel::class.java)) {

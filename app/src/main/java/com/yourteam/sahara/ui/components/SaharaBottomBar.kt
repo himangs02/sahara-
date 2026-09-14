@@ -1,5 +1,8 @@
 package com.yourteam.sahara.ui.components
 
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
@@ -16,12 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-sealed class SaharaBottomTab(val route: String, val label: String, val icon: ImageVector) {
-    data object Home : SaharaBottomTab("home", "Home", Icons.Default.Home)
-    data object Progress : SaharaBottomTab("performance", "Progress", Icons.Default.BarChart)
-    data object Voice : SaharaBottomTab("voice", "Voice", Icons.Default.Mic)
-    data object Caregiver : SaharaBottomTab("caregiver_login", "Caregiver", Icons.Default.People)
-    data object More : SaharaBottomTab("more", "More", Icons.Default.MoreHoriz)
+sealed class SaharaBottomTab(val route: String, val label: Int, val icon: ImageVector) {
+    data object Home : SaharaBottomTab("home", R.string.nav_home, Icons.Default.Home)
+    data object Progress : SaharaBottomTab("performance", R.string.nav_progress, Icons.Default.BarChart)
+    data object Voice : SaharaBottomTab("voice", R.string.nav_voice, Icons.Default.Mic)
+    data object Caregiver : SaharaBottomTab("caregiver_home", R.string.nav_caregiver, Icons.Default.People)
+    data object More : SaharaBottomTab("more", R.string.nav_more, Icons.Default.MoreHoriz)
 }
 
 @Composable
@@ -51,12 +54,12 @@ fun SaharaBottomBar(
                 icon = {
                     Icon(
                         imageVector = tab.icon,
-                        contentDescription = tab.label
+                        contentDescription = stringResource(tab.label)
                     )
                 },
                 label = {
                     Text(
-                        text = tab.label,
+                        text = stringResource(tab.label),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }

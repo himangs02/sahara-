@@ -1,0 +1,39 @@
+# Local development only. Not a production deployment topology (see Stage 10).
+#
+# Credentials below are read from a local .env file (git-ignored) via the
+# POSTGRES_* variables -- nothing here is a committed secret. Copy .env.example to
+# .env and set real values before running `docker compose up`.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sahara}
+      POSTGRES_USER: ${POSTGRES_USER:-sahara_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in backend/.env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - sahara_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sahara_user} -d ${POSTGRES_DB:-sahara}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sahara_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sahara}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in backend/.env}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+    ports:
+      - "8000:8000"
+
+volumes:
+  sahara_postgres_data:

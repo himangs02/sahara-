@@ -6,15 +6,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.SwitchAccount
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +30,8 @@ import com.yourteam.sahara.viewmodel.CaregiverViewModel
 fun CaregiverHomeScreen(
     caregiverViewModel: CaregiverViewModel,
     onSelectPatient: (String) -> Unit,
+    onBackToElderHome: () -> Unit,
+    onSwitchPatient: () -> Unit,
     onLogout: () -> Unit
 ) {
     val state by caregiverViewModel.state.collectAsState()
@@ -33,10 +39,18 @@ fun CaregiverHomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Caregiver Dashboard", style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(R.string.caregiver_dashboard), style = MaterialTheme.typography.titleLarge) },
+                navigationIcon = {
+                    IconButton(onClick = onBackToElderHome) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_to_elder_mode))
+                    }
+                },
                 actions = {
+                    IconButton(onClick = onSwitchPatient) {
+                        Icon(Icons.Default.SwitchAccount, contentDescription = stringResource(R.string.switch_patient))
+                    }
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Exit Caregiver Mode")
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = stringResource(R.string.log_out))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -54,13 +68,13 @@ fun CaregiverHomeScreen(
         ) {
             Column {
                 Text(
-                    text = "Good Morning 👋",
+                    text = stringResource(R.string.good_morning),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Monitoring cognitive activity engagement",
+                    text = stringResource(R.string.monitoring_engagement),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -72,7 +86,7 @@ fun CaregiverHomeScreen(
             )
 
             Text(
-                text = "Your Patients",
+                text = stringResource(R.string.your_patients),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -128,7 +142,7 @@ private fun PatientCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${patient.age} yrs • ${patient.region} (${patient.language})",
+                        text = stringResource(R.string.patient_details, patient.age, patient.region, patient.language),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -144,12 +158,12 @@ private fun PatientCard(
             ) {
                 Column {
                     Text(
-                        text = "Cognitive Engagement",
+                        text = stringResource(R.string.cognitive_engagement),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = if (overallEngagement > 0) "$overallEngagement%" else "New Patient",
+                        text = if (overallEngagement > 0) "$overallEngagement%" else stringResource(R.string.new_patient),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -160,7 +174,7 @@ private fun PatientCard(
                     onClick = onViewProfile,
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("VIEW DASHBOARD", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.view_dashboard), style = MaterialTheme.typography.labelLarge)
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(Icons.Default.ChevronRight, contentDescription = null)
                 }

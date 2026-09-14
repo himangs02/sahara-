@@ -1,11 +1,14 @@
 package com.yourteam.sahara.ai
 
+import com.yourteam.sahara.R
+import com.yourteam.sahara.model.AlertKind
 import com.yourteam.sahara.model.AlertSeverity
 import com.yourteam.sahara.model.CaregiverAlert
 import com.yourteam.sahara.model.CaregiverInsight
 import com.yourteam.sahara.model.CognitiveActivityType
 import com.yourteam.sahara.model.GameResult
 import com.yourteam.sahara.model.InsightType
+import com.yourteam.sahara.model.UiText
 
 data class ActivityChangeBreakdown(
     val activityType: CognitiveActivityType,
@@ -15,7 +18,7 @@ data class ActivityChangeBreakdown(
     val recentTimeSeconds: Long,
     val previousMistakes: Float,
     val recentMistakes: Float,
-    val interpretation: String
+    val interpretation: UiText
 )
 
 class CaregiverInsightEngine {
@@ -26,9 +29,9 @@ class CaregiverInsightEngine {
             return listOf(
                 CaregiverInsight(
                     activityType = null,
-                    title = "Baseline Activity Started",
-                    summary = "The patient has started using Sahara. Activity trends will appear as games are completed.",
-                    observations = listOf("No completed sessions recorded yet."),
+                    title = UiText(R.string.insight_baseline_title),
+                    summary = UiText(R.string.insight_baseline_summary),
+                    observations = listOf(UiText(R.string.insight_no_sessions)),
                     type = InsightType.STABLE
                 )
             )
@@ -37,6 +40,7 @@ class CaregiverInsightEngine {
         val insights = mutableListOf<CaregiverInsight>()
 
         CognitiveActivityType.entries.forEach { activityType ->
+            val name = UiText(activityType.titleRes)
             val activityResults = completed.filter {
                 it.gameType.equals(activityType.id, ignoreCase = true) ||
                 it.gameType.equals(activityType.displayName, ignoreCase = true)
@@ -60,16 +64,16 @@ class CaregiverInsightEngine {
                     val mistakeIncrease = recentMistakesAvg - prevMistakesAvg
 
                     if (accDrop >= 10f || mistakeIncrease >= 1.5f) {
-                        val obs = mutableListOf<String>()
-                        if (accDrop >= 10f) obs.add("Recent accuracy decreased by ${accDrop.toInt()}% compared to baseline.")
-                        if (timeIncrease > 5f) obs.add("Recent response times are slower by ${timeIncrease.toInt()} seconds.")
-                        if (mistakeIncrease > 0.5f) obs.add("More mistakes were recorded in recent sessions.")
+                        val obs = mutableListOf<UiText>()
+                        if (accDrop >= 10f) obs.add(UiText(R.string.obs_accuracy_dropped, accDrop.toInt()))
+                        if (timeIncrease > 5f) obs.add(UiText(R.string.obs_slower, timeIncrease.toInt()))
+                        if (mistakeIncrease > 0.5f) obs.add(UiText(R.string.obs_more_mistakes))
 
                         insights.add(
                             CaregiverInsight(
                                 activityType = activityType,
-                                title = "${activityType.displayName} Performance Changed",
-                                summary = "${activityType.displayName} performance has decreased compared with recent sessions.",
+                                title = UiText(R.string.insight_decline_title, name),
+                                summary = UiText(R.string.insight_decline_summary, name),
                                 observations = obs,
                                 type = InsightType.DECLINE
                             )
@@ -78,9 +82,12 @@ class CaregiverInsightEngine {
                         insights.add(
                             CaregiverInsight(
                                 activityType = activityType,
-                                title = "${activityType.displayName} Performance Improving",
-                                summary = "${activityType.displayName} performance has shown consistent improvement.",
-                                observations = listOf("Accuracy increased by ${(recentAcc - prevAcc).toInt()}%.", "Mistakes decreased in recent sessions."),
+                                title = UiText(R.string.insight_improving_title, name),
+                                summary = UiText(R.string.insight_improving_summary, name),
+                                observations = listOf(
+                                    UiText(R.string.obs_accuracy_increased, (recentAcc - prevAcc).toInt()),
+                                    UiText(R.string.obs_fewer_mistakes)
+                                ),
                                 type = InsightType.IMPROVING
                             )
                         )
@@ -88,9 +95,12 @@ class CaregiverInsightEngine {
                         insights.add(
                             CaregiverInsight(
                                 activityType = activityType,
-                                title = "${activityType.displayName} Performance Stable",
-                                summary = "${activityType.displayName} performance is currently stable.",
-                                observations = listOf("Consistent accuracy around ${recentAcc.toInt()}%.", "Stable reaction and completion pace."),
+                                title = UiText(R.string.insight_stable_title, name),
+                                summary = UiText(R.string.insight_stable_summary, name),
+                                observations = listOf(
+                                    UiText(R.string.obs_consistent_accuracy, recentAcc.toInt()),
+                                    UiText(R.string.obs_stable_pace)
+                                ),
                                 type = InsightType.STABLE
                             )
                         )
@@ -99,9 +109,12 @@ class CaregiverInsightEngine {
                     insights.add(
                         CaregiverInsight(
                             activityType = activityType,
-                            title = "${activityType.displayName} Initial Pace",
-                            summary = "Initial sessions recorded for ${activityType.displayName}.",
-                            observations = listOf("Average accuracy: ${recentAcc.toInt()}%.", "Average completion time: ${recentTimeAvg.toInt()}s."),
+                            title = UiText(R.string.insight_initial_title, name),
+                            summary = UiText(R.string.insight_initial_summary, name),
+                            observations = listOf(
+                                UiText(R.string.obs_average_accuracy, recentAcc.toInt()),
+                                UiText(R.string.obs_average_time, recentTimeAvg.toInt())
+                            ),
                             type = InsightType.STABLE
                         )
                     )
@@ -113,9 +126,9 @@ class CaregiverInsightEngine {
             insights.add(
                 CaregiverInsight(
                     activityType = null,
-                    title = "Overall Activity Stable",
-                    summary = "Cognitive activity engagement and performance remain consistent.",
-                    observations = listOf("Activity participation is ongoing.", "No negative performance variance detected."),
+                    title = UiText(R.string.insight_overall_title),
+                    summary = UiText(R.string.insight_overall_summary),
+                    observations = listOf(UiText(R.string.obs_participation), UiText(R.string.obs_no_negative)),
                     type = InsightType.STABLE
                 )
             )
@@ -145,8 +158,7 @@ class CaregiverInsightEngine {
                     alerts.add(
                         CaregiverAlert(
                             id = "alert_low_${activityType.id}",
-                            title = "Attention Needed: ${activityType.displayName}",
-                            message = "${activityType.displayName} performance has been below the patient's recent baseline for 3 consecutive sessions.",
+                            kind = AlertKind.LOW_PERFORMANCE,
                             activityType = activityType,
                             severity = AlertSeverity.WARNING,
                             timestamp = recent3.first().timestamp
@@ -164,8 +176,7 @@ class CaregiverInsightEngine {
                 alerts.add(
                     CaregiverAlert(
                         id = "alert_inactivity",
-                        title = "Inactivity Reminder",
-                        message = "No cognitive activity sessions have been recorded in the past 3 days.",
+                        kind = AlertKind.INACTIVITY,
                         activityType = null,
                         severity = AlertSeverity.INFO,
                         timestamp = System.currentTimeMillis()
@@ -182,11 +193,11 @@ class CaregiverInsightEngine {
         activityType: CognitiveActivityType
     ): ActivityChangeBreakdown {
         val completed = allResults
-            .filter { 
+            .filter {
                 it.completed && (
-                    it.gameType.equals(activityType.id, ignoreCase = true) || 
+                    it.gameType.equals(activityType.id, ignoreCase = true) ||
                     it.gameType.equals(activityType.displayName, ignoreCase = true)
-                ) 
+                )
             }
             .sortedByDescending { it.timestamp }
 
@@ -202,13 +213,14 @@ class CaregiverInsightEngine {
         val recentMistakes = if (recent.isNotEmpty()) recent.map { it.mistakes }.average().toFloat() else 0f
         val prevMistakes = if (previous.isNotEmpty()) previous.map { it.mistakes }.average().toFloat() else recentMistakes
 
-        val interpretation = if (recentAcc < prevAcc) {
-            "Recent ${activityType.displayName} sessions show lower accuracy and slower responses compared to previous baseline."
-        } else if (recentAcc > prevAcc) {
-            "Recent ${activityType.displayName} sessions show improved accuracy and faster response times."
-        } else {
-            "Recent ${activityType.displayName} performance is consistent with the patient's baseline performance."
-        }
+        val interpretation = UiText(
+            when {
+                recentAcc < prevAcc -> R.string.interpretation_lower
+                recentAcc > prevAcc -> R.string.interpretation_higher
+                else -> R.string.interpretation_same
+            },
+            UiText(activityType.titleRes)
+        )
 
         return ActivityChangeBreakdown(
             activityType = activityType,

@@ -8,7 +8,7 @@ import com.yourteam.sahara.model.Patient
 data class PatientEntity(
     @PrimaryKey
     val id: String,
-    val syncId: String = "patient_001",
+    val syncId: String = id,
     val name: String,
     val age: Int,
     val region: String,

@@ -27,6 +27,7 @@ class AttentionGameViewModelTest {
     private val fakeDao = object : GameResultDao {
         override fun insertGameResult(gameResult: GameResultEntity): Long = 1L
         override fun getAllGameResults(): Flow<List<GameResultEntity>> = flowOf(emptyList())
+        override fun getGameResultsForPatient(patientId: String): Flow<List<GameResultEntity>> = flowOf(emptyList())
         override fun getAllGameResultsSync(): List<GameResultEntity> = emptyList()
         override fun getRecentGameResults(limit: Int): Flow<List<GameResultEntity>> = flowOf(emptyList())
         override fun getResultsForGameType(gameType: String): Flow<List<GameResultEntity>> = flowOf(emptyList())

@@ -9,9 +9,9 @@ enum class InsightType {
 
 data class CaregiverInsight(
     val activityType: CognitiveActivityType?,
-    val title: String,
-    val summary: String,
-    val observations: List<String>,
+    val title: UiText,
+    val summary: UiText,
+    val observations: List<UiText>,
     val type: InsightType,
     val timestamp: Long = System.currentTimeMillis()
 )

@@ -14,6 +14,9 @@ interface GameResultDao {
     @Query("SELECT * FROM game_results ORDER BY timestamp DESC")
     fun getAllGameResults(): Flow<List<GameResultEntity>>
 
+    @Query("SELECT * FROM game_results WHERE patientId = :patientId ORDER BY timestamp DESC")
+    fun getGameResultsForPatient(patientId: String): Flow<List<GameResultEntity>>
+
     @Query("SELECT * FROM game_results")
     fun getAllGameResultsSync(): List<GameResultEntity>
 

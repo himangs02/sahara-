@@ -1,12 +1,20 @@
 package com.yourteam.sahara.voice
 
 import android.content.Context
+import android.content.res.Configuration
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import com.yourteam.sahara.R
+import java.util.Locale
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class VoiceManager(
-    context: Context,
+    private val context: Context,
     private val onCommandRecognized: (VoiceCommand) -> Unit = {}
 ) {
     private val _voiceState = MutableStateFlow(VoiceState.IDLE)
@@ -18,7 +26,29 @@ class VoiceManager(
     private val _statusMessage = MutableStateFlow("Tap to Speak")
     val statusMessage: StateFlow<String> = _statusMessage.asStateFlow()
 
+    private val _commands = MutableSharedFlow<VoiceCommand>(extraBufferCapacity = 1)
+    val commands = _commands.asSharedFlow()
+
     var currentLanguage: String = "en"
+        set(value) {
+            if (field != value) {
+                stopListening()
+                field = value
+            }
+            ttsManager.setLanguage(value)
+            _statusMessage.value = message(R.string.tap_to_speak)
+        }
+
+    private fun message(id: Int): String {
+        val config = Configuration(context.resources.configuration)
+        config.setLocale(Locale.forLanguageTag(currentLanguage))
+        return context.createConfigurationContext(config).getString(id)
+    }
+
+    fun permissionDenied() {
+        _voiceState.value = VoiceState.ERROR
+        _statusMessage.value = message(R.string.microphone_permission)
+    }
 
     val ttsManager: TextToSpeechManager = TextToSpeechManager(context)
 
@@ -29,41 +59,46 @@ class VoiceManager(
         },
         onError = { error ->
             _voiceState.value = VoiceState.ERROR
-            _statusMessage.value = error
-            ttsManager.speak(error)
+            _statusMessage.value = message(error)
         }
     )
 
     fun startListening() {
-        if (_voiceState.value == VoiceState.SPEAKING) {
-            ttsManager.stop()
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            permissionDenied()
+            return
         }
+        if (_voiceState.value == VoiceState.LISTENING) return
+        ttsManager.stop()
         _voiceState.value = VoiceState.LISTENING
-        _statusMessage.value = "I'm listening..."
+        _statusMessage.value = message(R.string.listening)
         recognizerManager.startListening(currentLanguage)
     }
 
     fun stopListening() {
         recognizerManager.stopListening()
+        ttsManager.stop()
         _voiceState.value = VoiceState.IDLE
-        _statusMessage.value = "Tap to Speak"
+        _statusMessage.value = message(R.string.tap_to_speak)
     }
 
     fun handleSpeechResult(text: String) {
         _lastRecognizedText.value = text
         _voiceState.value = VoiceState.PROCESSING
-        _statusMessage.value = "Understanding..."
+        _statusMessage.value = message(R.string.processing)
 
         val command = VoiceCommand.parse(text)
         val responseSpeech = getReassuringResponse(command)
+        // Navigation must remain available even without a TTS voice installed.
+        _commands.tryEmit(command)
+        onCommandRecognized(command)
 
         _voiceState.value = VoiceState.SPEAKING
         _statusMessage.value = responseSpeech
 
         ttsManager.speak(responseSpeech) {
             _voiceState.value = VoiceState.IDLE
-            _statusMessage.value = "Tap to Speak"
-            onCommandRecognized(command)
+            _statusMessage.value = message(R.string.tap_to_speak)
         }
     }
 
@@ -72,7 +107,7 @@ class VoiceManager(
         _statusMessage.value = text
         ttsManager.speak(text) {
             _voiceState.value = VoiceState.IDLE
-            _statusMessage.value = "Tap to Speak"
+            _statusMessage.value = message(R.string.tap_to_speak)
         }
     }
 

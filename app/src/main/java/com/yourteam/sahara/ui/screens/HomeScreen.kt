@@ -3,16 +3,15 @@ package com.yourteam.sahara.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocalDrink
-import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.SupervisorAccount
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -24,16 +23,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.yourteam.sahara.ui.components.asString
+import com.yourteam.sahara.ui.components.icon
+import com.yourteam.sahara.ui.components.localizedName
+import com.yourteam.sahara.ui.components.localizedTitle
+import com.yourteam.sahara.ui.components.reminderTimeText
 import com.yourteam.sahara.R
 import com.yourteam.sahara.ai.AdaptiveRecommendation
 import com.yourteam.sahara.language.AppLanguage
 import com.yourteam.sahara.model.CognitiveActivityType
 import com.yourteam.sahara.model.Difficulty
+import com.yourteam.sahara.model.Reminder
+import com.yourteam.sahara.model.ReminderStatus
+import com.yourteam.sahara.model.TodayReminder
+import com.yourteam.sahara.model.UiText
 import com.yourteam.sahara.ui.theme.SaharaTheme
 import com.yourteam.sahara.viewmodel.HomeViewModel
 import com.yourteam.sahara.voice.VoiceManager
@@ -48,9 +56,11 @@ fun HomeScreen(
     onStartActivityClick: (CognitiveActivityType, Difficulty) -> Unit = { _, _ -> },
     onViewProgressClick: () -> Unit = {},
     onCaregiverPortalClick: () -> Unit = {},
-    onLanguageChange: (AppLanguage) -> Unit = {}
+    onLanguageChange: (AppLanguage) -> Unit = {},
+    onVoiceClick: (() -> Unit)? = null
 ) {
     val homeState by homeViewModel.state.collectAsState()
+    val todayReminders by homeViewModel.todayReminders.collectAsState()
     var selectedWhyActivity by remember { mutableStateOf<Pair<CognitiveActivityType, AdaptiveRecommendation>?>(null) }
 
     val defaultTapText = stringResource(R.string.tap_to_speak)
@@ -63,26 +73,26 @@ fun HomeScreen(
             onDismissRequest = { selectedWhyActivity = null },
             title = {
                 Text(
-                    text = "${stringResource(activityType.titleRes)} (${rec.recommendedDifficulty.name})",
+                    text = "${stringResource(activityType.titleRes)} (${rec.recommendedDifficulty.localizedName()})",
                     style = MaterialTheme.typography.titleLarge
                 )
             },
             text = {
                 Column {
                     Text(
-                        text = rec.reason,
+                        text = rec.reason.asString(),
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Recent activity metrics:",
+                        text = stringResource(R.string.metrics),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Accuracy: ${rec.recentAccuracy.toInt()}%")
-                    Text(text = "Mistakes (total): ${rec.recentMistakes}")
-                    Text(text = "Recent sessions evaluated: ${rec.recentSessionsCount}")
+                    Text(text = stringResource(R.string.accuracy_value, rec.recentAccuracy.toInt()))
+                    Text(text = stringResource(R.string.mistakes_value, rec.recentMistakes))
+                    Text(text = stringResource(R.string.sessions_value, rec.recentSessionsCount))
                 }
             },
             confirmButton = {
@@ -117,7 +127,9 @@ fun HomeScreen(
             voiceState = voiceState,
             statusText = voiceStatusText,
             onClick = {
-                if (voiceState == VoiceState.LISTENING) {
+                if (onVoiceClick != null) {
+                    onVoiceClick()
+                } else if (voiceState == VoiceState.LISTENING) {
                     voiceManager?.stopListening()
                 } else {
                     voiceManager?.startListening()
@@ -148,7 +160,10 @@ fun HomeScreen(
             }
         )
 
-        DailyCareSection()
+        DailyCareSection(
+            reminders = todayReminders,
+            onDoneChange = homeViewModel::setReminderDone
+        )
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
@@ -362,7 +377,7 @@ private fun TodayActivitySection(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = recommendation.recommendedDifficulty.name,
+                            text = recommendation.recommendedDifficulty.localizedName(),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.tertiary,
                             fontWeight = FontWeight.Bold
@@ -429,7 +444,7 @@ private fun OtherActivitiesSection(
                 val rec = recommendationsMap[activityType] ?: AdaptiveRecommendation(
                     recommendedDifficulty = Difficulty.EASY,
                     performanceScore = 0.5f,
-                    reason = "Default recommendation",
+                    reason = UiText(R.string.reason_loading),
                     confidence = 0f
                 )
 
@@ -472,7 +487,7 @@ private fun OtherActivitiesSection(
                                 )
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = "${stringResource(R.string.level)}: ${rec.recommendedDifficulty.name}",
+                                        text = "${stringResource(R.string.level)}: ${rec.recommendedDifficulty.localizedName()}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.tertiary,
                                         fontWeight = FontWeight.Bold
@@ -521,7 +536,10 @@ private fun OtherActivitiesSection(
 }
 
 @Composable
-private fun DailyCareSection() {
+private fun DailyCareSection(
+    reminders: List<TodayReminder>,
+    onDoneChange: (Reminder, Boolean) -> Unit
+) {
     Column {
         Text(
             text = stringResource(R.string.todays_care),
@@ -531,38 +549,35 @@ private fun DailyCareSection() {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        if (reminders.isEmpty()) {
+            Text(
+                text = stringResource(R.string.no_reminders_today),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            CareItem(
-                icon = Icons.Default.MedicalServices,
-                title = stringResource(R.string.morning_medicine),
-                time = "8:00 AM",
-                isCompleted = true
-            )
-            CareItem(
-                icon = Icons.Default.LocalDrink,
-                title = stringResource(R.string.hydration),
-                time = "10:30 AM",
-                isCompleted = false
-            )
-            CareItem(
-                icon = Icons.Default.Spa,
-                title = stringResource(R.string.evening_walk),
-                time = "5:00 PM",
-                isCompleted = false
-            )
+            reminders.forEach { item ->
+                CareItem(item = item, onDoneChange = { done -> onDoneChange(item.reminder, done) })
+            }
         }
     }
 }
 
 @Composable
 private fun CareItem(
-    icon: ImageVector,
-    title: String,
-    time: String,
-    isCompleted: Boolean
+    item: TodayReminder,
+    onDoneChange: (Boolean) -> Unit
 ) {
+    val isCompleted = item.status == ReminderStatus.COMPLETED
+    val isMissed = item.status == ReminderStatus.MISSED
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        // The whole card is one large checkbox so it is easy to tap.
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = isCompleted, role = Role.Checkbox, onValueChange = onDoneChange),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isCompleted)
@@ -589,7 +604,7 @@ private fun CareItem(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = icon,
+                    imageVector = item.reminder.type.icon,
                     contentDescription = null,
                     tint = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant
                     else MaterialTheme.colorScheme.primary,
@@ -601,25 +616,45 @@ private fun CareItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onSurface,
-                    textDecoration = if (isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                    text = item.reminder.localizedTitle(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = time,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = if (isMissed) {
+                        "${reminderTimeText(item.reminder.minuteOfDay)} • ${stringResource(R.string.reminder_missed)}"
+                    } else reminderTimeText(item.reminder.minuteOfDay),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (isMissed) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (item.reminder.description.isNotBlank()) {
+                    Text(
+                        text = item.reminder.description,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            if (isCompleted) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Visible label as well as the icon, so the Done state never relies on shape or colour alone.
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Completed",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
+                    imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                    contentDescription = null,
+                    tint = if (isCompleted) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(40.dp)
+                )
+                Text(
+                    text = stringResource(if (isCompleted) R.string.reminder_completed else R.string.mark_done),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isCompleted) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurface
                 )
             }
         }

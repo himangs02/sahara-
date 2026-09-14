@@ -27,14 +27,14 @@ fun ActivityResultView(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Well Done! 🎉",
+            text = stringResource(R.string.well_done),
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "$activityName Complete",
+            text = stringResource(R.string.activity_complete, activityName),
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
@@ -49,13 +49,13 @@ fun ActivityResultView(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(32.dp)) {
-                ResultStatRow("Rounds / Pairs", "${result?.matchedPairs ?: 0} / ${result?.totalPairs ?: 0}")
+                ResultStatRow(stringResource(R.string.rounds_pairs), "${result?.matchedPairs ?: 0} / ${result?.totalPairs ?: 0}")
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                 ResultStatRow(stringResource(R.string.mistakes), "${result?.mistakes ?: 0}")
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                 ResultStatRow(stringResource(R.string.time), formatTime(result?.completionTimeSeconds ?: 0))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                ResultStatRow("Accuracy", "${result?.accuracy?.toInt() ?: 0}%")
+                ResultStatRow(stringResource(R.string.accuracy), "${result?.accuracy?.toInt() ?: 0}%")
             }
         }
 

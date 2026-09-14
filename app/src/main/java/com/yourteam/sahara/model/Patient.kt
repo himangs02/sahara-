@@ -3,10 +3,10 @@ package com.yourteam.sahara.model
 import java.util.UUID
 
 data class Patient(
-    val syncId: String = "patient_001",
-    val id: String = "patient_001",
-    val name: String = "Kamala Devi",
-    val age: Int = 74,
-    val region: String = "Assam",
-    val language: String = "Assamese"
+    val syncId: String = java.util.UUID.randomUUID().toString(),
+    val id: String = syncId,
+    val name: String = "",
+    val age: Int = 0,
+    val region: String = "",
+    val language: String = "English"
 )

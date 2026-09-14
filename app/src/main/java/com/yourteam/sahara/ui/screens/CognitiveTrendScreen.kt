@@ -14,13 +14,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yourteam.sahara.model.CognitiveActivityType
+import com.yourteam.sahara.ui.components.currentLocale
 import com.yourteam.sahara.viewmodel.CaregiverViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,10 +38,10 @@ fun CognitiveTrendScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("7-Day Cognitive Trends", style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(R.string.trends_title), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -53,7 +58,7 @@ fun CognitiveTrendScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text(
-                text = "${state.patient.name}'s Activity Trends",
+                text = stringResource(R.string.patient_trends, state.patient.name),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -73,7 +78,7 @@ fun CognitiveTrendScreen(
 @Composable
 private fun TrendChartCard(
     activityType: CognitiveActivityType,
-    data: List<Pair<String, Float>>
+    data: List<Pair<Long, Float>>
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -93,7 +98,7 @@ private fun TrendChartCard(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = activityType.displayName,
+                    text = stringResource(activityType.titleRes),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -148,9 +153,10 @@ private fun TrendChartCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val dayFormat = SimpleDateFormat("EEE", currentLocale())
                 data.forEach { pair ->
                     Text(
-                        text = pair.first,
+                        text = dayFormat.format(Date(pair.first)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

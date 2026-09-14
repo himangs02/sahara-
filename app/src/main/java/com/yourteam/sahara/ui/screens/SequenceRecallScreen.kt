@@ -1,5 +1,8 @@
 package com.yourteam.sahara.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -36,7 +39,7 @@ fun SequenceRecallScreen(
     ) {
         if (state.isGameComplete) {
             ActivityResultView(
-                activityName = CognitiveActivityType.SEQUENCE_RECALL.displayName,
+                activityName = stringResource(R.string.sequence_recall),
                 result = viewModel.lastGameResult,
                 onPlayAgain = { viewModel.startGame(state.difficulty) },
                 onBackToHome = onBackToHome
@@ -45,7 +48,8 @@ fun SequenceRecallScreen(
             SequencePlayView(
                 state = state,
                 onReadyClick = { viewModel.startRecallPhase() },
-                onChoiceClick = { viewModel.onChoiceClicked(it) }
+                onChoiceClick = { viewModel.onChoiceClicked(it) },
+                labelFor = { viewModel.labelFor(it) }
             )
         }
     }
@@ -55,20 +59,21 @@ fun SequenceRecallScreen(
 private fun SequencePlayView(
     state: com.yourteam.sahara.viewmodel.SequenceRecallState,
     onReadyClick: () -> Unit,
-    onChoiceClick: (com.yourteam.sahara.model.CardIcon) -> Unit
+    onChoiceClick: (com.yourteam.sahara.model.CardIcon) -> Unit,
+    labelFor: (com.yourteam.sahara.model.CardIcon) -> Int
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            text = "Sequence Recall",
+            text = stringResource(R.string.sequence_recall),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = if (state.phase == SequencePhase.MEMORIZE)
-                "Remember the order of these objects."
+                stringResource(R.string.memorize_instruction)
             else
-                "Tap the objects in the same order.",
+                stringResource(R.string.recall_instruction),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -89,7 +94,7 @@ private fun SequencePlayView(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Memorize Sequence:",
+                        text = stringResource(R.string.memorize_sequence),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.Bold
@@ -103,7 +108,8 @@ private fun SequencePlayView(
                         state.targetSequence.forEach { icon ->
                             SequenceItemCard(
                                 icon = icon,
-                                modifier = Modifier.size(64.dp)
+                                modifier = Modifier.size(64.dp),
+                                labelRes = labelFor(icon)
                             )
                         }
                     }
@@ -117,7 +123,7 @@ private fun SequencePlayView(
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("I'M READY", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.ready), style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -135,7 +141,7 @@ private fun SequencePlayView(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Your Answer:",
+                        text = stringResource(R.string.your_answer),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -151,7 +157,8 @@ private fun SequencePlayView(
                                 SequenceItemCard(
                                     icon = selectedIcon,
                                     modifier = Modifier.size(56.dp),
-                                    isSelected = true
+                                    isSelected = true,
+                                    labelRes = labelFor(selectedIcon)
                                 )
                             } else {
                                 Card(
@@ -177,7 +184,7 @@ private fun SequencePlayView(
             if (state.feedbackMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = state.feedbackMessage,
+                    text = stringResource(R.string.try_again),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 8.dp)
@@ -196,7 +203,8 @@ private fun SequencePlayView(
                 items(state.shuffledChoices) { choiceIcon ->
                     SequenceItemCard(
                         icon = choiceIcon,
-                        onClick = { onChoiceClick(choiceIcon) }
+                        onClick = { onChoiceClick(choiceIcon) },
+                        labelRes = labelFor(choiceIcon)
                     )
                 }
             }
@@ -216,9 +224,9 @@ private fun SequencePlayView(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatItem("Round", "${state.currentRound} / ${state.totalRounds}")
-                StatItem("Mistakes", "${state.mistakes}")
-                StatItem("Time", formatTime(state.timeSeconds))
+                StatItem(stringResource(R.string.round), "${state.currentRound} / ${state.totalRounds}")
+                StatItem(stringResource(R.string.mistakes), "${state.mistakes}")
+                StatItem(stringResource(R.string.time), formatTime(state.timeSeconds))
             }
         }
     }

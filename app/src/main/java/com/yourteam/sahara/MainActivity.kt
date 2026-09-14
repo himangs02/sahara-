@@ -1,7 +1,5 @@
 package com.yourteam.sahara
 
-import android.content.Context
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -16,6 +14,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        (application as SaharaApplication).languageManager.refreshFromConfiguration()
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
                 android.graphics.Color.TRANSPARENT,
@@ -31,5 +30,10 @@ class MainActivity : AppCompatActivity() {
                 SaharaNavHost(modifier = Modifier.fillMaxSize())
             }
         }
+    }
+
+    override fun onStop() {
+        (application as SaharaApplication).voiceManager.stopListening()
+        super.onStop()
     }
 }

@@ -1,5 +1,6 @@
 package com.yourteam.sahara.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,8 @@ import com.yourteam.sahara.model.CognitiveActivityType
 import com.yourteam.sahara.model.Difficulty
 import com.yourteam.sahara.model.GameResult
 import com.yourteam.sahara.model.SequencePhase
+import com.yourteam.sahara.personalization.GameContentProvider
+import com.yourteam.sahara.personalization.NerRegions
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,17 +37,25 @@ data class SequenceRecallState(
 
 class SequenceRecallViewModel(
     private val repository: GameResultRepository,
-    private val initialDifficulty: Difficulty = Difficulty.EASY
+    private val initialDifficulty: Difficulty = Difficulty.EASY,
+    private val patientRegion: String? = null,
+    private val culturalContentEnabled: Boolean = true
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SequenceRecallState())
     val state: StateFlow<SequenceRecallState> = _state.asStateFlow()
+
+    private val regionProfile = NerRegions.match(patientRegion)
 
     private var timerJob: Job? = null
     private var memorizeJob: Job? = null
 
     var lastGameResult: GameResult? = null
         private set
+
+    /** See [com.yourteam.sahara.viewmodel.MemoryGameViewModel.labelFor]. */
+    @StringRes
+    fun labelFor(icon: CardIcon): Int = GameContentProvider.labelFor(icon, regionProfile, culturalContentEnabled)
 
     init {
         startGame(initialDifficulty)
@@ -155,6 +166,7 @@ class SequenceRecallViewModel(
         val acc = if (totalAttempts > 0) ((correctRounds.toFloat() / totalAttempts) * 100).toInt() else 0
 
         val result = GameResult(
+            patientId = repository.patientId,
             gameType = CognitiveActivityType.SEQUENCE_RECALL.id,
             difficulty = _state.value.difficulty.name,
             totalPairs = _state.value.totalRounds,
@@ -188,12 +200,14 @@ class SequenceRecallViewModel(
 
 class SequenceRecallViewModelFactory(
     private val repository: GameResultRepository,
-    private val initialDifficulty: Difficulty = Difficulty.EASY
+    private val initialDifficulty: Difficulty = Difficulty.EASY,
+    private val patientRegion: String? = null,
+    private val culturalContentEnabled: Boolean = true
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SequenceRecallViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SequenceRecallViewModel(repository, initialDifficulty) as T
+            return SequenceRecallViewModel(repository, initialDifficulty, patientRegion, culturalContentEnabled) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

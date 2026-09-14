@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.yourteam.sahara.R
 import com.yourteam.sahara.model.CardIcon
 
 @Composable
@@ -22,7 +24,9 @@ fun SequenceItemCard(
     icon: CardIcon,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    isSelected: Boolean = false
+    isSelected: Boolean = false,
+    /** The familiar name for this picture (generic, or from a cultural content pack). */
+    @androidx.annotation.StringRes labelRes: Int? = null
 ) {
     Card(
         modifier = modifier
@@ -45,7 +49,7 @@ fun SequenceItemCard(
         ) {
             Icon(
                 imageVector = icon.imageVector,
-                contentDescription = icon.name,
+                contentDescription = labelRes?.let { stringResource(it) },
                 modifier = Modifier.size(52.dp),
                 tint = if (isSelected)
                     MaterialTheme.colorScheme.primary

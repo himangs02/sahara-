@@ -1,5 +1,8 @@
 package com.yourteam.sahara.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import com.yourteam.sahara.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -35,7 +38,7 @@ fun AttentionGameScreen(
     ) {
         if (state.isGameComplete) {
             ActivityResultView(
-                activityName = CognitiveActivityType.ATTENTION_TAP.displayName,
+                activityName = stringResource(R.string.attention_tap),
                 result = viewModel.lastGameResult,
                 onPlayAgain = { viewModel.startGame(state.difficulty) },
                 onBackToHome = onBackToHome
@@ -43,7 +46,8 @@ fun AttentionGameScreen(
         } else {
             AttentionPlayView(
                 state = state,
-                onSymbolClick = { viewModel.onSymbolClicked(it) }
+                onSymbolClick = { viewModel.onSymbolClicked(it) },
+                labelFor = { viewModel.labelFor(it) }
             )
         }
     }
@@ -52,17 +56,18 @@ fun AttentionGameScreen(
 @Composable
 private fun AttentionPlayView(
     state: com.yourteam.sahara.viewmodel.AttentionGameState,
-    onSymbolClick: (com.yourteam.sahara.model.AttentionSymbolItem) -> Unit
+    onSymbolClick: (com.yourteam.sahara.model.AttentionSymbolItem) -> Unit,
+    labelFor: (com.yourteam.sahara.model.CardIcon) -> Int
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            text = "Attention Tap",
+            text = stringResource(R.string.attention_tap),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Tap the matching symbol below.",
+            text = stringResource(R.string.attention_instruction),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -83,7 +88,7 @@ private fun AttentionPlayView(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Find: ",
+                    text = stringResource(R.string.find_target),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Bold
@@ -91,7 +96,7 @@ private fun AttentionPlayView(
                 Spacer(modifier = Modifier.width(12.dp))
                 Icon(
                     imageVector = state.targetIcon.imageVector,
-                    contentDescription = "Target Icon",
+                    contentDescription = stringResource(labelFor(state.targetIcon)),
                     modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -101,7 +106,7 @@ private fun AttentionPlayView(
         if (state.feedbackMessage != null) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = state.feedbackMessage,
+                text = stringResource(R.string.try_again),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(start = 8.dp)
@@ -120,7 +125,8 @@ private fun AttentionPlayView(
             items(state.gridSymbols) { item ->
                 AttentionTarget(
                     item = item,
-                    onClick = { onSymbolClick(item) }
+                    onClick = { onSymbolClick(item) },
+                    labelRes = labelFor(item.icon)
                 )
             }
         }
@@ -139,9 +145,9 @@ private fun AttentionPlayView(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatItem("Round", "${state.currentRound} / ${state.totalRounds}")
-                StatItem("Mistakes", "${state.mistakes}")
-                StatItem("Time", formatTime(state.timeSeconds))
+                StatItem(stringResource(R.string.round), "${state.currentRound} / ${state.totalRounds}")
+                StatItem(stringResource(R.string.mistakes), "${state.mistakes}")
+                StatItem(stringResource(R.string.time), formatTime(state.timeSeconds))
             }
         }
     }

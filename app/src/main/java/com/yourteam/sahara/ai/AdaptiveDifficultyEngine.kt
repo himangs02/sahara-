@@ -1,8 +1,10 @@
 package com.yourteam.sahara.ai
 
+import com.yourteam.sahara.R
 import com.yourteam.sahara.model.CognitiveActivityType
 import com.yourteam.sahara.model.Difficulty
 import com.yourteam.sahara.model.GameResult
+import com.yourteam.sahara.model.UiText
 
 class AdaptiveDifficultyEngine(private val analyzer: PerformanceAnalyzer = PerformanceAnalyzer()) {
 
@@ -10,6 +12,7 @@ class AdaptiveDifficultyEngine(private val analyzer: PerformanceAnalyzer = Perfo
         history: List<GameResult>,
         activityType: CognitiveActivityType = CognitiveActivityType.MEMORY_MATCH
     ): AdaptiveRecommendation {
+        val name = UiText(activityType.titleRes)
         // Filter out incomplete games and keep only results for the requested activity type
         val completed = history
             .filter { 
@@ -24,7 +27,7 @@ class AdaptiveDifficultyEngine(private val analyzer: PerformanceAnalyzer = Perfo
             return AdaptiveRecommendation(
                 recommendedDifficulty = Difficulty.EASY,
                 performanceScore = 0.5f,
-                reason = "No history for ${activityType.displayName}. Starting with Easy to learn your baseline activity pace.",
+                reason = UiText(R.string.reason_no_history, name),
                 confidence = 0.0f
             )
         }
@@ -47,7 +50,7 @@ class AdaptiveDifficultyEngine(private val analyzer: PerformanceAnalyzer = Perfo
         }
         
         var recommended = currentDifficulty
-        var reason = "Your ${activityType.displayName} performance is stable."
+        var reason = UiText(R.string.reason_stable, name)
         val confidence = minOf(1.0f, recent.size * 0.33f)
 
         // Hysteresis rule: Only promote or demote if the user has played at least 2 games
@@ -61,30 +64,30 @@ class AdaptiveDifficultyEngine(private val analyzer: PerformanceAnalyzer = Perfo
             if (score >= 0.75f && recentAvgAcc >= 80.0) {
                 if (currentDifficulty == Difficulty.EASY) {
                     recommended = Difficulty.MEDIUM
-                    reason = "Your recent ${activityType.displayName} performance has been consistently strong. You are ready for a slightly more challenging activity."
+                    reason = UiText(R.string.reason_promote_medium, name)
                 } else if (currentDifficulty == Difficulty.MEDIUM) {
                     recommended = Difficulty.HARD
-                    reason = "Your recent ${activityType.displayName} performance is excellent. Let's try a harder challenge."
+                    reason = UiText(R.string.reason_promote_hard, name)
                 } else {
-                    reason = "You are performing at the highest difficulty level for ${activityType.displayName} excellently!"
+                    reason = UiText(R.string.reason_at_max, name)
                 }
             } 
             // WEAK performance criteria
             else if (score <= 0.45f && recentAvgAcc <= 50.0) {
                 if (currentDifficulty == Difficulty.HARD) {
                     recommended = Difficulty.MEDIUM
-                    reason = "Adjusting the difficulty of ${activityType.displayName} to better match your recent activity pace."
+                    reason = UiText(R.string.reason_adjust_down, name)
                 } else if (currentDifficulty == Difficulty.MEDIUM) {
                     recommended = Difficulty.EASY
-                    reason = "Adjusting the difficulty of ${activityType.displayName} to better match your recent activity pace."
+                    reason = UiText(R.string.reason_adjust_down, name)
                 } else {
-                    reason = "Keep practicing ${activityType.displayName} at this comfortable pace!"
+                    reason = UiText(R.string.reason_keep_practicing, name)
                 }
             }
         } else if (recent.size == 1) {
-            reason = "We are still learning your optimal ${activityType.displayName} activity level based on your first session."
+            reason = UiText(R.string.reason_first_session, name)
         } else {
-            reason = "Gathering a bit more data before recommending a change for ${activityType.displayName}."
+            reason = UiText(R.string.reason_gathering, name)
         }
 
         return AdaptiveRecommendation(

@@ -1,5 +1,6 @@
 package com.yourteam.sahara.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,8 @@ import com.yourteam.sahara.model.CardIcon
 import com.yourteam.sahara.model.CognitiveActivityType
 import com.yourteam.sahara.model.Difficulty
 import com.yourteam.sahara.model.GameResult
+import com.yourteam.sahara.personalization.GameContentProvider
+import com.yourteam.sahara.personalization.NerRegions
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,15 +37,23 @@ data class AttentionGameState(
 
 class AttentionGameViewModel(
     private val repository: GameResultRepository,
-    private val initialDifficulty: Difficulty = Difficulty.EASY
+    private val initialDifficulty: Difficulty = Difficulty.EASY,
+    private val patientRegion: String? = null,
+    private val culturalContentEnabled: Boolean = true
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AttentionGameState())
     val state: StateFlow<AttentionGameState> = _state.asStateFlow()
 
+    private val regionProfile = NerRegions.match(patientRegion)
+
     private var timerJob: Job? = null
     var lastGameResult: GameResult? = null
         private set
+
+    /** See [com.yourteam.sahara.viewmodel.MemoryGameViewModel.labelFor]. */
+    @StringRes
+    fun labelFor(icon: CardIcon): Int = GameContentProvider.labelFor(icon, regionProfile, culturalContentEnabled)
 
     init {
         startGame(initialDifficulty)
@@ -145,6 +156,7 @@ class AttentionGameViewModel(
         val acc = if (totalAttempts > 0) ((correct.toFloat() / totalAttempts) * 100).toInt() else 0
 
         val result = GameResult(
+            patientId = repository.patientId,
             gameType = CognitiveActivityType.ATTENTION_TAP.id,
             difficulty = _state.value.difficulty.name,
             totalPairs = _state.value.totalRounds,
@@ -178,12 +190,14 @@ class AttentionGameViewModel(
 
 class AttentionGameViewModelFactory(
     private val repository: GameResultRepository,
-    private val initialDifficulty: Difficulty = Difficulty.EASY
+    private val initialDifficulty: Difficulty = Difficulty.EASY,
+    private val patientRegion: String? = null,
+    private val culturalContentEnabled: Boolean = true
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AttentionGameViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return AttentionGameViewModel(repository, initialDifficulty) as T
+            return AttentionGameViewModel(repository, initialDifficulty, patientRegion, culturalContentEnabled) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

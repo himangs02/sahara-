@@ -40,19 +40,19 @@ fun MemoryGameScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Memory Match",
+                        text = stringResource(R.string.memory_match),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackToHome) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.startGame(state.difficulty) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Restart")
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.restart))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -77,7 +77,8 @@ fun MemoryGameScreen(
             } else {
                 GamePlayView(
                     state = state,
-                    onCardClick = { viewModel.onCardClicked(it) }
+                    onCardClick = { viewModel.onCardClicked(it) },
+                    labelFor = { viewModel.labelFor(it) }
                 )
             }
         }
@@ -87,7 +88,8 @@ fun MemoryGameScreen(
 @Composable
 private fun GamePlayView(
     state: com.yourteam.sahara.viewmodel.MemoryGameState,
-    onCardClick: (com.yourteam.sahara.model.MemoryCardModel) -> Unit
+    onCardClick: (com.yourteam.sahara.model.MemoryCardModel) -> Unit,
+    labelFor: (com.yourteam.sahara.model.CardIcon) -> Int
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Level & Stars Header
@@ -97,7 +99,7 @@ private fun GamePlayView(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Level ${if (state.difficulty == Difficulty.EASY) 1 else if (state.difficulty == Difficulty.MEDIUM) 2 else 3}",
+                text = "${stringResource(R.string.level)} ${if (state.difficulty == Difficulty.EASY) 1 else if (state.difficulty == Difficulty.MEDIUM) 2 else 3}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -118,7 +120,7 @@ private fun GamePlayView(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Find the matching pairs",
+            text = stringResource(R.string.find_matching_pictures),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -136,7 +138,8 @@ private fun GamePlayView(
             items(state.cards) { card ->
                 MemoryCard(
                     card = card,
-                    onClick = { onCardClick(card) }
+                    onClick = { onCardClick(card) },
+                    labelRes = labelFor(card.icon)
                 )
             }
         }
@@ -179,7 +182,7 @@ private fun GameResultView(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Well Done! 🎉",
+            text = stringResource(R.string.well_done),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,
@@ -187,7 +190,7 @@ private fun GameResultView(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Memory Activity Complete",
+            text = stringResource(R.string.activity_complete, stringResource(R.string.memory_match)),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
@@ -202,13 +205,13 @@ private fun GameResultView(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
-                ResultStatRow("Pairs Found", "${result?.matchedPairs ?: 0} / ${result?.totalPairs ?: 0}")
+                ResultStatRow(stringResource(R.string.pairs), "${result?.matchedPairs ?: 0} / ${result?.totalPairs ?: 0}")
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                ResultStatRow("Mistakes", "${result?.mistakes ?: 0}")
+                ResultStatRow(stringResource(R.string.mistakes), "${result?.mistakes ?: 0}")
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                ResultStatRow("Time", formatTime(result?.completionTimeSeconds ?: 0))
+                ResultStatRow(stringResource(R.string.time), formatTime(result?.completionTimeSeconds ?: 0))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                ResultStatRow("Accuracy", "${result?.accuracy?.toInt() ?: 0}%")
+                ResultStatRow(stringResource(R.string.accuracy), "${result?.accuracy?.toInt() ?: 0}%")
             }
         }
 
@@ -222,7 +225,7 @@ private fun GameResultView(
             shape = RoundedCornerShape(30.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text("PLAY AGAIN", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.play_again), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -234,7 +237,7 @@ private fun GameResultView(
                 .height(60.dp),
             shape = RoundedCornerShape(30.dp)
         ) {
-            Text("BACK TO HOME", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.back_to_home), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
     }
 }

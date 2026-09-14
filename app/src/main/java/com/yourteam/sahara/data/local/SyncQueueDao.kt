@@ -29,4 +29,9 @@ interface SyncQueueDao {
 
     @Query("DELETE FROM sync_queue WHERE id = :id")
     fun deleteSyncItem(id: Int)
+
+    /** Drops any still-pending queue items for one entity, so a new operation (most
+     * importantly a DELETE) supersedes an earlier queued one instead of racing it. */
+    @Query("DELETE FROM sync_queue WHERE entityType = :entityType AND entityId = :entityId AND syncStatus = 'PENDING'")
+    fun deletePendingItemsFor(entityType: String, entityId: String)
 }
