@@ -22,9 +22,9 @@ data class CaregiverPatientEntity(val caregiverId: String, val patientId: String
 data class LocalSessionEntity(@PrimaryKey val id: Int = 1, val caregiverId: String, val selectedPatientId: String? = null)
 
 object DemoIdentity {
-    const val CAREGIVER_ID = "1534493d-51e3-461e-a731-1c7b943fa301"
-    const val PATIENT_ID = "30e140b1-88e7-419e-8b7d-6063ee613c01"
-    const val LOGIN = "demo@sahara.local"
+    const val CAREGIVER_ID = "2534493d-51e3-461e-a731-1c7b943fa302"
+    const val PATIENT_ID = "40e140b1-88e7-419e-8b7d-6063ee613c02"
+    const val LOGIN = "demo@sahara-app.com"
     // Public development fixture only; never a real user's password.
     const val PASSWORD = "SaharaDemo!2026"
 }

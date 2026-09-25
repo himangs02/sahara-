@@ -32,7 +32,6 @@ fun SyncStatusCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val offlineMessage = stringResource(R.string.sync_offline_toast)
     val syncStartedMessage = stringResource(R.string.sync_started)
 
     Card(
@@ -99,16 +98,8 @@ fun SyncStatusCard(
 
             OutlinedButton(
                 onClick = {
-                    if (syncStatusInfo.state == SyncState.OFFLINE) {
-                        Toast.makeText(
-                            context,
-                            offlineMessage,
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } else {
-                        onSyncNowClick(context)
-                        Toast.makeText(context, syncStartedMessage, Toast.LENGTH_SHORT).show()
-                    }
+                    onSyncNowClick(context)
+                    Toast.makeText(context, syncStartedMessage, Toast.LENGTH_SHORT).show()
                 },
                 shape = RoundedCornerShape(12.dp)
             ) {

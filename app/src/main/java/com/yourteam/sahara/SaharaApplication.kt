@@ -120,6 +120,12 @@ class SaharaApplication : Application() {
                     reminderRepository.seedBuiltInReminders(demo.PATIENT_ID)
                     prefs.edit().putBoolean(KEY_SEEDED, true).apply()
                 }
+                if (backendTokenStore.getToken() == null) {
+                    val outcome = backendAuthService.loginAndVerify(demo.LOGIN, demo.PASSWORD)
+                    if (outcome is BackendAuthService.Outcome.Failed) {
+                        backendAuthService.registerAndVerify(demo.LOGIN, demo.PASSWORD)
+                    }
+                }
             }
             accountsReady.value = true
             // Alarms can be lost (force stop, reinstall); rescheduling replaces rather than duplicates them.

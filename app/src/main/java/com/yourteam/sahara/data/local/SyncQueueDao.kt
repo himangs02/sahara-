@@ -24,6 +24,9 @@ interface SyncQueueDao {
     @Query("SELECT COUNT(*) FROM sync_queue WHERE syncStatus = 'PENDING'")
     fun getPendingCountFlow(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM sync_queue WHERE syncStatus = 'PENDING' AND caregiverId = :caregiverId")
+    fun getPendingCountFlowForCaregiver(caregiverId: String): Flow<Int>
+
     @Query("DELETE FROM sync_queue WHERE syncStatus = 'SYNCED'")
     fun deleteSyncedItems()
 

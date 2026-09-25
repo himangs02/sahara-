@@ -15,10 +15,14 @@ import com.yourteam.sahara.data.remote.RemoteDataSource
 import com.yourteam.sahara.data.remote.SimulatedRemoteDataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,9 +45,20 @@ class SyncManager(
 
     private val _isSyncing = MutableStateFlow(false)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val pendingCountFlow: Flow<Int> = (authDataSource?.sessions ?: flowOf(null))
+        .flatMapLatest { session ->
+            val caregiverId = session?.caregiverId
+            if (caregiverId != null) {
+                syncQueueDao.getPendingCountFlowForCaregiver(caregiverId)
+            } else {
+                syncQueueDao.getPendingCountFlow()
+            }
+        }
+
     val syncStatusInfo: StateFlow<SyncStatusInfo> = combine(
         networkMonitor.isOnline,
-        syncQueueDao.getPendingCountFlow(),
+        pendingCountFlow,
         _isSyncing
     ) { isOnline, pendingCount, isSyncing ->
         val state = when {

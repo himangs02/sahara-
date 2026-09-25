@@ -1,5 +1,6 @@
 package com.yourteam.sahara.data.remote
 
+import android.util.Log
 import com.yourteam.sahara.api.SaharaApiService
 import com.yourteam.sahara.api.toCreateDto
 import com.yourteam.sahara.api.toDomain
@@ -21,6 +22,8 @@ class RetrofitRemoteDataSource(private val api: SaharaApiService) : RemoteDataSo
 
     override suspend fun uploadGameResult(result: GameResult): Boolean = runCatching {
         api.uploadGameResult(result.patientId, result.toUpsertDto())
+    }.onFailure { e ->
+        Log.e("RetrofitRemote", "Failed to upload game result", e)
     }.isSuccess
 
     override suspend fun uploadPatient(patient: Patient): Boolean = runCatching {

@@ -215,7 +215,13 @@ private fun LoginScreen(app: SaharaApplication) {
                         val outcome = if (attemptedRegister) {
                             app.backendAuthService.registerAndVerify(backendEmail, backendPassword)
                         } else {
-                            app.backendAuthService.loginAndVerify(backendEmail, backendPassword)
+                            val loginOutcome = app.backendAuthService.loginAndVerify(backendEmail, backendPassword)
+                            if (loginOutcome is BackendAuthService.Outcome.Failed) {
+                                val regOutcome = app.backendAuthService.registerAndVerify(backendEmail, backendPassword)
+                                if (regOutcome is BackendAuthService.Outcome.Verified) regOutcome else loginOutcome
+                            } else {
+                                loginOutcome
+                            }
                         }
                         when (outcome) {
                             is BackendAuthService.Outcome.Verified -> {
